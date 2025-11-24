@@ -18,6 +18,7 @@ public struct MCalendarView: View {
     
 
     var isHorizontal: Bool { configData.axis == .horizontal }
+    @State var height: CGFloat = .zero
 
     init(_ selectedDate: Binding<Date?>?, _ selectedRange: Binding<MDateRange?>?, _ configBuilder: (CalendarConfig) -> CalendarConfig) {
         self._selectedData = .init(wrappedValue: .init(selectedDate, selectedRange))
@@ -37,15 +38,27 @@ private extension MCalendarView {
     }
     func createScrollView() -> some View { ScrollViewReader { reader in
         ScrollView(
-            isHorizontal ? .horizontal : .vertical, showsIndicators: false
+            isHorizontal ? .horizontal : .vertical,
+            showsIndicators: false
         ) {
-            LazyVStack(spacing: isHorizontal ? .zero : configData.monthsSpacing) {
-                ForEach(monthsData, id: \.month, content: createMonthItem)
+            Group {
+                if isHorizontal {
+                    LazyHStack(alignment: .top, spacing: .zero) {
+                        ForEach(monthsData, id: \.month) {
+                            createMonthItem($0).trackGeometry($height)
+                        }
+                    }
+                    .frame(minHeight: height)
+                } else {
+                    LazyVStack(spacing: configData.monthsSpacing) {
+                        ForEach(monthsData, id: \.month, content: createMonthItem)
+                    }
+                }
             }
             .padding(.top, configData.monthsPadding.top)
             .padding(.bottom, configData.monthsPadding.bottom)
             .background(configData.monthsViewBackground)
-            .if(isHorizontal, then: { $0.scrollTargetLayout() })
+            .if(isHorizontal, then: { $0.scrollTargetLayout()})
         }
         .if(isHorizontal, then: { $0.scrollTargetBehavior(.paging) })
         .onAppear() { scrollToDate(reader, animatable: false) }
@@ -57,8 +70,12 @@ private extension MCalendarView {
         VStack(spacing: configData.monthLabelDaysSpacing) {
             createMonthLabel(data.month)
             createMonthView(data)
+                    .fixedSize(horizontal: false, vertical: true)
+//            Spacer(minLength: .zero)
         }
-        .if(isHorizontal, then: { $0.containerRelativeFrame(.horizontal) })
+        .if(isHorizontal, then: {
+            $0.containerRelativeFrame([.horizontal])
+        })
     }
 }
 private extension MCalendarView {

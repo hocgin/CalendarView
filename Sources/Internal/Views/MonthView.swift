@@ -47,3 +47,25 @@ private extension MonthView {
 private extension MonthView {
     var animation: Animation { .spring(response: 0.32, dampingFraction: 1, blendDuration: 0) }
 }
+
+
+#if DEBUG
+#Preview {
+    @Previewable @State var selectedDate: Date? = nil
+    VStack {
+        MCalendarView(
+            selectedDate: $selectedDate,
+            selectedRange: nil,
+            configBuilder: { config in
+                return config
+                    .axis(.horizontal)
+                    .daysVerticalSpacing(-1)
+                    .daysHorizontalSpacing(-1)
+            }
+        )
+        .fixedSize(horizontal: false, vertical: true)
+        .background(.red)
+    }
+    .frame(maxHeight: .infinity, alignment: .top)
+}
+#endif
