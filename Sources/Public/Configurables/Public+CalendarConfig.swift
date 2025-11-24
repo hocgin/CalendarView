@@ -49,6 +49,7 @@ public extension CalendarConfig {
 
     /// Sets the horizontal spacing between day cells in the view.
     func daysHorizontalSpacing(_ value: CGFloat) -> Self { changing(path: \.daysSpacing.horizontal, to: value) }
+    func axis(_ value: Axis.Set) -> Self { changing(path: \.axis, to: value) }
 }
 
 // MARK: - View Customisation
