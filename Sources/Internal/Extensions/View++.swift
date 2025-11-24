@@ -13,4 +13,11 @@ import SwiftUI
 
 extension View {
     @ViewBuilder func active(if condition: Bool) -> some View { if condition { self } }
+    @ViewBuilder func `if`<T: View>(_ condition: @autoclosure () -> Bool, then content: (Self) -> T) -> some View {
+        if condition() {
+            content(self)
+        } else {
+            self
+        }
+    }
 }

@@ -15,7 +15,9 @@ public struct MCalendarView: View {
     @StateObject var selectedData: Data.MCalendarView
     let monthsData: [Data.MonthView]
     let configData: CalendarConfig
+    
 
+    var isHorizontal: Bool { configData.axis == .horizontal }
 
     init(_ selectedDate: Binding<Date?>?, _ selectedRange: Binding<MDateRange?>?, _ configBuilder: (CalendarConfig) -> CalendarConfig) {
         self._selectedData = .init(wrappedValue: .init(selectedDate, selectedRange))
@@ -34,14 +36,18 @@ private extension MCalendarView {
         configData.weekdaysView().erased()
     }
     func createScrollView() -> some View { ScrollViewReader { reader in
-        ScrollView(showsIndicators: false) {
-            LazyVStack(spacing: configData.monthsSpacing) {
+        ScrollView(
+            isHorizontal ? .horizontal : .vertical, showsIndicators: false
+        ) {
+            LazyVStack(spacing: isHorizontal ? .zero : configData.monthsSpacing) {
                 ForEach(monthsData, id: \.month, content: createMonthItem)
             }
             .padding(.top, configData.monthsPadding.top)
             .padding(.bottom, configData.monthsPadding.bottom)
             .background(configData.monthsViewBackground)
+            .if(isHorizontal, then: { $0.scrollTargetLayout() })
         }
+        .if(isHorizontal, then: { $0.scrollTargetBehavior(.paging) })
         .onAppear() { scrollToDate(reader, animatable: false) }
         .onChange(of: configData.scrollDate) { _ in scrollToDate(reader, animatable: true) }
     }}
@@ -52,6 +58,7 @@ private extension MCalendarView {
             createMonthLabel(data.month)
             createMonthView(data)
         }
+        .if(isHorizontal, then: { $0.containerRelativeFrame(.horizontal) })
     }
 }
 private extension MCalendarView {
