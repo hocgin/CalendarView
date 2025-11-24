@@ -65,6 +65,11 @@ private extension MonthView {
         )
         .fixedSize(horizontal: false, vertical: true)
         .background(.red)
+        VStack {
+            Text("详情")
+                .font(.system(size: 20, weight: .bold))
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
     }
     .frame(maxHeight: .infinity, alignment: .top)
 }

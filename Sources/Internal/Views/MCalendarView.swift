@@ -18,7 +18,16 @@ public struct MCalendarView: View {
     
 
     var isHorizontal: Bool { configData.axis == .horizontal }
-    @State var height: CGFloat = .zero
+    @State var heights: [CGFloat] = []
+    @State private var firstVisibleIndex = 0
+    @State private var lastVisibleIndex = 0
+    @State private var scrollViewWidth = CGFloat.zero
+    private var minContentHeight: CGFloat? {
+        if heights.isEmpty || firstVisibleIndex >= heights.count || lastVisibleIndex >= heights.count { return nil }
+        return  firstVisibleIndex <= lastVisibleIndex
+            ? heights[firstVisibleIndex...lastVisibleIndex].max()
+            : nil
+    }
 
     init(_ selectedDate: Binding<Date?>?, _ selectedRange: Binding<MDateRange?>?, _ configBuilder: (CalendarConfig) -> CalendarConfig) {
         self._selectedData = .init(wrappedValue: .init(selectedDate, selectedRange))
@@ -44,11 +53,21 @@ private extension MCalendarView {
             Group {
                 if isHorizontal {
                     LazyHStack(alignment: .top, spacing: .zero) {
-                        ForEach(monthsData, id: \.month) {
-                            createMonthItem($0).trackGeometry($height)
+                        ForEach(
+                            Array(monthsData.enumerated()),
+                            id: \.offset
+                        ) { idx, item in
+                            createMonthItem(item)
+                                .trackGeometry(
+                                    $heights,
+                                    scrollViewWidth,
+                                    index: idx,
+                                    firstVisibleIndex: $firstVisibleIndex,
+                                    lastVisibleIndex: $lastVisibleIndex
+                                )
                         }
                     }
-                    .frame(minHeight: height)
+                    .frame(minHeight: minContentHeight)
                 } else {
                     LazyVStack(spacing: configData.monthsSpacing) {
                         ForEach(monthsData, id: \.month, content: createMonthItem)
@@ -59,7 +78,9 @@ private extension MCalendarView {
             .padding(.bottom, configData.monthsPadding.bottom)
             .background(configData.monthsViewBackground)
             .if(isHorizontal, then: { $0.scrollTargetLayout()})
+//            .animation(.default, value: minContentHeight)
         }
+        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { scrollViewWidth = $0 }
         .if(isHorizontal, then: { $0.scrollTargetBehavior(.paging) })
         .onAppear() { scrollToDate(reader, animatable: false) }
         .onChange(of: configData.scrollDate) { _ in scrollToDate(reader, animatable: true) }
