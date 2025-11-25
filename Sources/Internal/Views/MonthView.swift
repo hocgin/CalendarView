@@ -51,16 +51,19 @@ private extension MonthView {
 
 #if DEBUG
 #Preview {
+    @Previewable @State var selectedMonth: Date? = nil
     @Previewable @State var selectedDate: Date? = nil
     VStack {
+        Text(
+            "\(selectedMonth?.formatted(.dateTime.year().month(.twoDigits).day()) ?? "")"
+        )
         MCalendarView(
             selectedDate: $selectedDate,
             selectedRange: nil,
             configBuilder: { config in
-                return config
+                config
                     .axis(.horizontal)
-                    .daysVerticalSpacing(-1)
-                    .daysHorizontalSpacing(-1)
+                    .onMonthChange { selectedMonth = $0 }
             }
         )
         .fixedSize(horizontal: false, vertical: true)

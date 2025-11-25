@@ -22,6 +22,7 @@ public struct MCalendarView: View {
     @State private var firstVisibleIndex = 0
     @State private var lastVisibleIndex = 0
     @State private var scrollViewWidth = CGFloat.zero
+    @State private var pageIndex: Date? = .now
     private var minContentHeight: CGFloat? {
         if heights.isEmpty || firstVisibleIndex >= heights.count || lastVisibleIndex >= heights.count { return nil }
         return  firstVisibleIndex <= lastVisibleIndex
@@ -65,6 +66,7 @@ private extension MCalendarView {
                                     firstVisibleIndex: $firstVisibleIndex,
                                     lastVisibleIndex: $lastVisibleIndex
                                 )
+                                .id(item.month)
                         }
                     }
                     .frame(minHeight: minContentHeight)
@@ -84,18 +86,25 @@ private extension MCalendarView {
         .if(isHorizontal, then: { $0.scrollTargetBehavior(.paging) })
         .onAppear() { scrollToDate(reader, animatable: false) }
         .onChange(of: configData.scrollDate) { _ in scrollToDate(reader, animatable: true) }
+        .if(isHorizontal, then: {
+             $0.scrollPosition(id: $pageIndex)
+                 .onChange(of: pageIndex) {
+                     configData.onMonthChange($0 ?? .now)
+                 }
+        })
     }}
 }
 private extension MCalendarView {
     func createMonthItem(_ data: Data.MonthView) -> some View {
         VStack(spacing: configData.monthLabelDaysSpacing) {
             createMonthLabel(data.month)
+                .containerRelativeFrame([.horizontal])
             createMonthView(data)
                     .fixedSize(horizontal: false, vertical: true)
 //            Spacer(minLength: .zero)
         }
-        .if(isHorizontal, then: {
-            $0.containerRelativeFrame([.horizontal])
+        .if(isHorizontal, then: { v in
+            return v.containerRelativeFrame([.horizontal])
         })
     }
 }
@@ -103,7 +112,12 @@ private extension MCalendarView {
     func createMonthLabel(_ month: Date) -> some View {
         configData.monthLabel(month)
             .erased()
-            .onAppear { onMonthChange(month) }
+            .if(!isHorizontal, then: {
+                $0.onAppear {
+                    onMonthChange(month)
+                }
+            })
+            
     }
     func createMonthView(_ data: Data.MonthView) -> some View {
         MonthView(selectedDate: $selectedData.date, selectedRange: $selectedData.range, data: data, config: configData)
